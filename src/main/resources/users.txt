@@ -1,6 +1,4 @@
-TP001|STUDENT|Mark Leo|mark@email.com|12345
-TP002|LECTURER|Dr Lim|lim@email.com|abc123
-TP003|STAFF|Sarah Wong|sarah@email.com|staff123
-TP004|ADMIN|Admin User|admin@email.com|admin123
-TP005|STUDENT|Jane Doe|jane@email.com|pass123
-TP006|LECTURER|Prof Smith|smith@email.com|lecture123
+TP001|STUDENT|Mark Leo|student@email.com|509e87a6c45ee0a3c657bf946dd6dc43d7e5502143be195280f279002e70f7d9
+TP002|LECTURER|Dr Lim|lecturer@email.com|2ee9e6233aa5ab1d2fb1f7c4356aef70348bc0a2c453c0738827dbb65f9c03b0
+TP003|STAFF|Sarah Wong|staff@email.com|010f4928749bd109657b1b4ef213359ac420678c72932b0d5bc110076afc52f7
+TP004|ADMIN|Admin User|admin@email.com|25f43b1486ad95a1398e3eeb3d83bc4010015fcc9bedb35b432e00298d5021f7
