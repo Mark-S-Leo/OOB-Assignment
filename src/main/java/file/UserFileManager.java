@@ -1,12 +1,17 @@
 package file;
 
 import model.*;
+import util.PasswordUtil; // CHANGE: Added import for password hashing utility
 import java.io.*;
 import java.util.ArrayList;
 import java.util.Scanner;
 
+/**
+ * CHANGE: Updated file format to support email-based authentication
+ * File format: tp|role|name|email|hashedPassword
+ */
 public class UserFileManager {
-    private static final String FILE_PATH = "src/main/resources/users.txt";
+    private static final String FILE_PATH = "../resources/users.txt"; // CHANGE: Fixed path to work from java directory
 
     // Load all users from file
     public static ArrayList<User> loadAll() {
@@ -117,6 +122,43 @@ public class UserFileManager {
         User user = findById(tp);
         if (user != null && user.getPassword().equals(password)) {
             return user;
+        }
+        return null;
+    }
+
+    // CHANGE: Added email-based login validation with password hashing
+    /**
+     * Validates user login using email and password
+     * @param email User's email address
+     * @param password Plain text password (will be hashed for comparison)
+     * @return User object if credentials are valid, null otherwise
+     */
+    public static User validateLoginByEmail(String email, String password) {
+        ArrayList<User> users = loadAll();
+        for (User user : users) {
+            // Check if email matches and password hash matches
+            if (user.getEmail().equalsIgnoreCase(email)) {
+                // CHANGE: Use password hashing for secure comparison
+                if (PasswordUtil.verifyPassword(password, user.getPassword())) {
+                    return user;
+                }
+            }
+        }
+        return null;
+    }
+
+    // CHANGE: Added method to find user by email
+    /**
+     * Find user by email address
+     * @param email User's email
+     * @return User object if found, null otherwise
+     */
+    public static User findByEmail(String email) {
+        ArrayList<User> users = loadAll();
+        for (User user : users) {
+            if (user.getEmail().equalsIgnoreCase(email)) {
+                return user;
+            }
         }
         return null;
     }

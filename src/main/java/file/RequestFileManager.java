@@ -6,7 +6,7 @@ import java.util.ArrayList;
 import java.util.Scanner;
 
 public class RequestFileManager {
-    private static final String FILE_PATH = "src/main/resources/requests.txt";
+    private static final String FILE_PATH = "../resources/requests.txt";
 
     // Load all requests from file
     public static ArrayList<Request> loadAll() {
