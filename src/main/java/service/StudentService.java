@@ -5,18 +5,27 @@ import file.*;
 import java.util.ArrayList;
 
 public class StudentService {
-    private String studentTp;
+    private final String studentTp;
 
     public StudentService(String studentTp) {
         this.studentTp = studentTp;
     }
 
-    // View all available slots (status = OPEN)
+    /**
+     * Retrieves all available consultation slots (status = OPEN)
+     * @return List of available slots
+     */
     public ArrayList<Slot> viewAvailableSlots() {
         return SlotFileManager.getAvailableSlots();
     }
 
-    // Create a consultation request
+    /**
+     * Creates a consultation request for a specific slot
+     * @param lecturerTp The lecturer's TP number
+     * @param slotId The ID of the requested slot
+     * @param reason The reason for consultation
+     * @return true if request created successfully, false otherwise
+     */
     public boolean createConsultationRequest(String lecturerTp, String slotId, String reason) {
         // Check if slot exists and is open
         Slot slot = SlotFileManager.findById(slotId);
@@ -37,12 +46,19 @@ public class StudentService {
         return true;
     }
 
-    // View own requests
+    /**
+     * Retrieves all consultation requests made by this student
+     * @return List of requests belonging to this student
+     */
     public ArrayList<Request> viewOwnRequests() {
         return RequestFileManager.getRequestsByStudent(studentTp);
     }
 
-    // Cancel request (only if PENDING or APPROVED)
+    /**
+     * Cancels a pending or approved consultation request
+     * @param requestId The ID of the request to cancel
+     * @return true if cancelled successfully, false otherwise
+     */
     public boolean cancelRequest(String requestId) {
         Request request = RequestFileManager.findById(requestId);
         
@@ -68,7 +84,10 @@ public class StudentService {
         return true;
     }
 
-    // View own appointments
+    /**
+     * Retrieves all approved appointments for this student
+     * @return List of appointments for this student
+     */
     public ArrayList<Appointment> viewOwnAppointments() {
         return AppointmentFileManager.getAppointmentsByStudent(studentTp);
     }

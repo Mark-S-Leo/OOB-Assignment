@@ -22,17 +22,15 @@ import java.util.Map;
 public class StudentDashboard extends JFrame {
     private User user;
     private StudentService studentService;
-    private Map<String, String> lecturerMap; 
-    private Map<String, String> lecturerIdMap; 
+    private Map<String, String> lecturerMap; // tp -> name
+    private Map<String, String> lecturerNameToTpMap; // name -> tp (optimized reverse lookup)
     private JPopupMenu profileMenu;
 
     public StudentDashboard(User user) {
         this.user = user;
         this.studentService = new StudentService(user.getTp());
         this.lecturerMap = new HashMap<>();
-        this.lecturerIdMap = new HashMap<>();
-        
-        // Load lecturer information
+        this.lecturerNameToTpMap = new HashMap<>();
         loadLecturerData();
 
         setTitle("Student Consultation Portal");
@@ -42,57 +40,24 @@ public class StudentDashboard extends JFrame {
         setLayout(new BorderLayout(15, 15));
         getContentPane().setBackground(BACKGROUND_COLOR);
 
-        // Header Panel with modern styling
-        JPanel headerPanel = createHeaderPanel();
-        add(headerPanel, BorderLayout.NORTH);
-
-        // Main Content Panel with cards
-        JPanel mainPanel = createMainPanel();
-        add(mainPanel, BorderLayout.CENTER);
-
-        // Footer with logout
-        JPanel footerPanel = createFooterPanel();
-        add(footerPanel, BorderLayout.SOUTH);
+        add(createHeaderPanel(), BorderLayout.NORTH);
+        add(createMainPanel(), BorderLayout.CENTER);
+        add(createFooterPanel(), BorderLayout.SOUTH);
     }
     
     /**
-     * Load lecturer data and create name mappings
+     * Load lecturer data once at initialization for better performance
+     * Creates both forward (tp->name) and reverse (name->tp) lookups
      */
     private void loadLecturerData() {
-        ArrayList<User> allUsers = UserFileManager.loadAll();
-        for (User u : allUsers) {
-            if ("LECTURER".equalsIgnoreCase(u.getRole())) {
+        UserFileManager.loadAll().stream()
+            .filter(u -> "LECTURER".equalsIgnoreCase(u.getRole()))
+            .forEach(u -> {
                 lecturerMap.put(u.getTp(), u.getName());
-                // Generate short ID from name (first 3-4 letters)
-                String shortId = generateShortId(u.getName());
-                lecturerIdMap.put(u.getName(), shortId);
-            }
-        }
+                lecturerNameToTpMap.put(u.getName(), u.getTp());
+            });
     }
     
-    /**
-     * Generate a short unique ID from lecturer name
-     * and takes the first letters of each word, up to 4 characters
-     */
-    private String generateShortId(String name) {
-        String[] parts = name.split("\\s+");
-        StringBuilder id = new StringBuilder();
-        for (String part : parts) {
-            if (!part.isEmpty()) {
-                id.append(part.substring(0, 1).toUpperCase());
-            }
-            if (id.length() >= 4) break;
-        }
-        // If still less than 3, add more letters from first word
-        if (id.length() < 3 && parts.length > 0 && parts[0].length() > 1) {
-            id.append(parts[0].substring(1, Math.min(4, parts[0].length())).toUpperCase());
-        }
-        return id.toString();
-    }
-    
-    /**
-     * Get lecturer name from TP number
-     */
     private String getLecturerName(String tp) {
         return lecturerMap.getOrDefault(tp, "Unknown");
     }
@@ -243,66 +208,39 @@ public class StudentDashboard extends JFrame {
         JPanel panel = new JPanel(new FlowLayout(FlowLayout.CENTER));
         panel.setBackground(BACKGROUND_COLOR);
         panel.setBorder(BorderFactory.createEmptyBorder(SPACING_MD, SPACING_XL, SPACING_XL, SPACING_XL));
-        
-        JLabel footerLabel = new JLabel("Student Consultation Management System © 2025");
-        footerLabel.setFont(FONT_TINY);
-        footerLabel.setForeground(TEXT_SECONDARY);
-        
-        panel.add(footerLabel);
         return panel;
     }
 
-    /**
-     * View available consultation slots in a modern table format
-     */
     private void viewAvailableSlots() {
         ArrayList<Slot> slots = studentService.viewAvailableSlots();
         
         if (slots.isEmpty()) {
             JOptionPane.showMessageDialog(this, 
                 "No available slots found at the moment.\nPlease check back later.", 
-                "No Slots Available", 
-                JOptionPane.INFORMATION_MESSAGE);
+                "No Slots Available", JOptionPane.INFORMATION_MESSAGE);
             return;
         }
 
-        // Create table data
         String[] columns = {"Lecturer Name", "Date", "Time", "Slot ID"};
         Object[][] data = new Object[slots.size()][4];
         
         for (int i = 0; i < slots.size(); i++) {
             Slot slot = slots.get(i);
-            data[i][0] = getLecturerName(slot.getLecturerTp());
-            data[i][1] = slot.getDate();
-            data[i][2] = slot.getStartTime() + " - " + slot.getEndTime();
-            data[i][3] = slot.getSlotId();
+            data[i] = new Object[]{
+                getLecturerName(slot.getLecturerTp()),
+                slot.getDate(),
+                slot.getStartTime() + " - " + slot.getEndTime(),
+                slot.getSlotId()
+            };
         }
         
-        DefaultTableModel model = new DefaultTableModel(data, columns) {
-            @Override
-            public boolean isCellEditable(int row, int column) {
-                return false;
-            }
-        };
-        
-        JTable table = new JTable(model);
-        table.setFont(FONT_BODY);
-        table.setRowHeight(TABLE_ROW_HEIGHT);
-        table.setGridColor(GRID_COLOR);
-        table.setSelectionBackground(SELECTION_COLOR);
-        
-        JTableHeader header = table.getTableHeader();
-        header.setFont(FONT_TABLE_HEADER);
-        header.setBackground(CARD_COLOR);
-        header.setForeground(TEXT_COLOR);
-        
+        JTable table = createStyledTable(data, columns);
         JScrollPane scrollPane = new JScrollPane(table);
         scrollPane.setPreferredSize(new Dimension(700, 400));
         scrollPane.setBorder(BorderFactory.createEmptyBorder());
         
         JOptionPane.showMessageDialog(this, scrollPane, 
-            "Available Consultation Slots", 
-            JOptionPane.PLAIN_MESSAGE);
+            "Available Consultation Slots", JOptionPane.PLAIN_MESSAGE);
     }
 
     /**
@@ -383,25 +321,23 @@ public class StudentDashboard extends JFrame {
             slotIdMap.clear();
             
             if (selectedLecturer != null && !selectedLecturer.startsWith("--")) {
-                // Find lecturer TP from name
-                String lecturerTp = null;
-                for (Map.Entry<String, String> entry : lecturerMap.entrySet()) {
-                    if (entry.getValue().equals(selectedLecturer)) {
-                        lecturerTp = entry.getKey();
-                        break;
-                    }
-                }
+                // Use optimized reverse lookup map instead of iterating
+                String lecturerTp = lecturerNameToTpMap.get(selectedLecturer);
                 
                 if (lecturerTp != null) {
                     ArrayList<Slot> slots = studentService.viewAvailableSlots();
-                    for (Slot slot : slots) {
-                        if (slot.getLecturerTp().equals(lecturerTp)) {
+                    
+                    // Filter and sort in one pass
+                    slots.stream()
+                        .filter(slot -> slot.getLecturerTp().equals(lecturerTp))
+                        .sorted((s1, s2) -> s1.getStartTime().compareTo(s2.getStartTime()))
+                        .forEach(slot -> {
                             String displayText = slot.getDate() + " | " + 
                                                slot.getStartTime() + " - " + slot.getEndTime();
                             slotCombo.addItem(displayText);
                             slotIdMap.put(displayText, slot.getSlotId());
-                        }
-                    }
+                        });
+                    
                     slotCombo.setEnabled(slotCombo.getItemCount() > 1);
                 }
             }
@@ -440,54 +376,24 @@ public class StudentDashboard extends JFrame {
         JButton cancelBtn = createStyledButton("Cancel", TEXT_SECONDARY);
         
         submitBtn.addActionListener(e -> {
-            // Validation
             String selectedLecturer = (String) lecturerCombo.getSelectedItem();
             String selectedSlot = (String) slotCombo.getSelectedItem();
-            String reason = reasonArea.getText().trim();
+            String reason = reasonArea.getText();
             
-            if (selectedLecturer == null || selectedLecturer.startsWith("--")) {
-                showError("Please select a lecturer.");
-                return;
-            }
+            if (!validateRequestInput(selectedLecturer, selectedSlot, reason)) return;
             
-            if (selectedSlot == null || selectedSlot.startsWith("--")) {
-                showError("Please select a time slot.");
-                return;
-            }
-            
-            if (reason.isEmpty()) {
-                showError("Please provide a reason for the consultation.");
-                return;
-            }
-            
-            if (reason.length() < 10) {
-                showError("Reason must be at least 10 characters long.");
-                return;
-            }
-            
-            // Find lecturer TP
-            String lecturerTp = null;
-            for (Map.Entry<String, String> entry : lecturerMap.entrySet()) {
-                if (entry.getValue().equals(selectedLecturer)) {
-                    lecturerTp = entry.getKey();
-                    break;
-                }
-            }
-            
+            // Use optimized reverse lookup instead of stream
+            String lecturerTp = lecturerNameToTpMap.get(selectedLecturer);
             String slotId = slotIdMap.get(selectedSlot);
             
-            if (lecturerTp != null && slotId != null) {
-                boolean success = studentService.createConsultationRequest(lecturerTp, slotId, reason);
-                if (success) {
-                    JOptionPane.showMessageDialog(dialog, 
-                        "Request submitted successfully!\nYou will be notified once approved.", 
-                        "Success", 
-                        JOptionPane.INFORMATION_MESSAGE);
-                    dialog.dispose();
-                    // No need to refresh as user hasn't opened My Requests yet
-                } else {
-                    showError("Failed to create request. The slot may no longer be available.");
-                }
+            if (lecturerTp != null && slotId != null && 
+                studentService.createConsultationRequest(lecturerTp, slotId, reason.trim())) {
+                JOptionPane.showMessageDialog(dialog, 
+                    "Request submitted successfully!\nYou will be notified once approved.", 
+                    "Success", JOptionPane.INFORMATION_MESSAGE);
+                dialog.dispose();
+            } else {
+                showError("Failed to create request. The slot may no longer be available.");
             }
         });
         
@@ -525,27 +431,22 @@ public class StudentDashboard extends JFrame {
         String[] columns = {"Request ID", "Lecturer", "Date", "Time", "Status", "Reason"};
         DefaultTableModel tableModel = new DefaultTableModel(columns, 0) {
             @Override
-            public boolean isCellEditable(int row, int column) {
-                return false;
-            }
+            public boolean isCellEditable(int row, int column) { return false; }
         };
         
-        for (Request req : requests) {
-            // Get slot details
+        requests.forEach(req -> {
             String slotInfo = getSlotInfo(req.getSlotId());
             String[] parts = slotInfo.split("\\|");
-            
-            Object[] row = {
+            String reason = req.getReason();
+            tableModel.addRow(new Object[]{
                 req.getRequestId(),
                 getLecturerName(req.getLecturerTp()),
                 parts.length > 0 ? parts[0] : "N/A",
                 parts.length > 1 ? parts[1] : "N/A",
                 req.getStatus(),
-                req.getReason().length() > 30 ? 
-                    req.getReason().substring(0, 30) + "..." : req.getReason()
-            };
-            tableModel.addRow(row);
-        }
+                reason.length() > 30 ? reason.substring(0, 30) + "..." : reason
+            });
+        });
         
         JTable table = new JTable(tableModel);
         table.setFont(FONT_SMALL);
@@ -569,8 +470,9 @@ public class StudentDashboard extends JFrame {
         buttonPanel.setBackground(Color.WHITE);
         buttonPanel.setBorder(BorderFactory.createEmptyBorder(10, 20, 20, 20));
         
-        JButton cancelBtn = createStyledButton("Cancel Request", DANGER_COLOR);
         JButton closeBtn = createStyledButton("Close", TEXT_SECONDARY);
+        JButton cancelBtn = createStyledButton("Cancel Request", DANGER_COLOR);
+
         
         cancelBtn.addActionListener(e -> {
             int selectedRow = table.getSelectedRow();
@@ -582,20 +484,18 @@ public class StudentDashboard extends JFrame {
             String requestId = (String) tableModel.getValueAt(selectedRow, 0);
             String status = (String) tableModel.getValueAt(selectedRow, 4);
             
-            // Check if request is pending
             if (!status.equalsIgnoreCase("PENDING")) {
                 showError("Only pending requests can be cancelled.\nThis request is already " + status + ".");
                 return;
             }
             
-            // Show cancellation reason dialog
             showCancelRequestDialog(requestId, dialog, tableModel, selectedRow);
         });
         
         closeBtn.addActionListener(e -> dialog.dispose());
         
-        buttonPanel.add(cancelBtn);
         buttonPanel.add(closeBtn);
+        buttonPanel.add(cancelBtn);
         
         dialog.add(buttonPanel, BorderLayout.SOUTH);
         
@@ -726,105 +626,112 @@ public class StudentDashboard extends JFrame {
         cancelDialog.setVisible(true);
     }
     
-    /**
-     * View student's approved appointments
-     */
     private void viewMyAppointments() {
         ArrayList<model.Appointment> appointments = studentService.viewOwnAppointments();
         
         if (appointments.isEmpty()) {
             JOptionPane.showMessageDialog(this, 
                 "You have no approved appointments yet.", 
-                "No Appointments", 
-                JOptionPane.INFORMATION_MESSAGE);
+                "No Appointments", JOptionPane.INFORMATION_MESSAGE);
             return;
         }
 
-        // Create table data
-        String[] columns = {"Appointment ID", "Lecturer", "Date", "Time", "Location", "Status"};
-        Object[][] data = new Object[appointments.size()][6];
+        String[] columns = {"Appointment ID", "Lecturer", "Date", "Time", "Status"};
+        Object[][] data = new Object[appointments.size()][5];
         
         for (int i = 0; i < appointments.size(); i++) {
             model.Appointment apt = appointments.get(i);
-            data[i][0] = apt.getAppointmentId();
-            // Get lecturer name from mapping, fallback to TP if not found
-            String lecturerName = lecturerMap.get(apt.getLecturerTp());
-            data[i][1] = (lecturerName != null) ? lecturerName : apt.getLecturerTp();
-            data[i][2] = apt.getDate();
-            data[i][3] = apt.getStartTime();
-            data[i][4] = "To be decided"; // Location to be decided by staff/lecturer
-            data[i][5] = apt.getStatus();
+            data[i] = new Object[]{
+                apt.getAppointmentId(),
+                lecturerMap.getOrDefault(apt.getLecturerTp(), apt.getLecturerTp()),
+                apt.getDate(),
+                apt.getStartTime(),
+                apt.getStatus()
+            };
         }
         
-        DefaultTableModel model = new DefaultTableModel(data, columns) {
-            @Override
-            public boolean isCellEditable(int row, int column) {
-                return false;
-            }
-        };
-        
-        JTable table = new JTable(model);
-        table.setFont(FONT_BODY);
+        JTable table = createStyledTable(data, columns);
         table.setRowHeight(35);
-        table.setGridColor(GRID_COLOR);
-        table.setSelectionBackground(SELECTION_COLOR);
-        
-        JTableHeader header = table.getTableHeader();
-        header.setFont(FONT_SUBHEADER);
-        header.setBackground(CARD_COLOR);
-        header.setForeground(TEXT_COLOR);
         
         JScrollPane scrollPane = new JScrollPane(table);
         scrollPane.setPreferredSize(new Dimension(800, 400));
         scrollPane.setBorder(BorderFactory.createEmptyBorder());
         
         JOptionPane.showMessageDialog(this, scrollPane, 
-            "My Approved Appointments", 
-            JOptionPane.PLAIN_MESSAGE);
+            "My Approved Appointments", JOptionPane.PLAIN_MESSAGE);
     }
     
-    /**
-     * Refresh requests table with latest data from file
-     */
     private void refreshRequestsTable(DefaultTableModel tableModel) {
-        // Clear existing rows
         tableModel.setRowCount(0);
         
-        // Reload requests from file
-        ArrayList<Request> requests = studentService.viewOwnRequests();
-        
-        // Add updated data to table
-        for (Request req : requests) {
-            // Get slot details
+        studentService.viewOwnRequests().forEach(req -> {
             String slotInfo = getSlotInfo(req.getSlotId());
             String[] parts = slotInfo.split("\\|");
-            
-            Object[] row = {
+            String reason = req.getReason();
+            tableModel.addRow(new Object[]{
                 req.getRequestId(),
                 getLecturerName(req.getLecturerTp()),
                 parts.length > 0 ? parts[0] : "N/A",
                 parts.length > 1 ? parts[1] : "N/A",
                 req.getStatus(),
-                req.getReason().length() > 30 ? 
-                    req.getReason().substring(0, 30) + "..." : req.getReason()
-            };
-            tableModel.addRow(row);
-        }
+                reason.length() > 30 ? reason.substring(0, 30) + "..." : reason
+            });
+        });
     }
     
-    /**
-     * Get slot information (date and time)
-     */
     private String getSlotInfo(String slotId) {
-        ArrayList<Slot> slots = studentService.viewAvailableSlots();
-        for (Slot slot : slots) {
-            if (slot.getSlotId().equals(slotId)) {
-                return slot.getDate() + "|" + slot.getStartTime() + " - " + slot.getEndTime();
-            }
-        }
-        return "N/A|N/A";
+        return studentService.viewAvailableSlots().stream()
+            .filter(slot -> slot.getSlotId().equals(slotId))
+            .findFirst()
+            .map(slot -> slot.getDate() + "|" + slot.getStartTime() + " - " + slot.getEndTime())
+            .orElse("N/A|N/A");
     }
     
+
+    private JTable createStyledTable(Object[][] data, String[] columns) {
+        DefaultTableModel model = new DefaultTableModel(data, columns) {
+            @Override
+            public boolean isCellEditable(int row, int column) { return false; }
+        };
+        
+        JTable table = new JTable(model);
+        table.setFont(FONT_BODY);
+        table.setRowHeight(TABLE_ROW_HEIGHT);
+        table.setGridColor(GRID_COLOR);
+        table.setSelectionBackground(SELECTION_COLOR);
+        
+        JTableHeader header = table.getTableHeader();
+        header.setFont(FONT_TABLE_HEADER);
+        header.setBackground(CARD_COLOR);
+        header.setForeground(TEXT_COLOR);
+        
+        return table;
+    }
+
+    private boolean validateRequestInput(String lecturer, String slot, String reason) {
+        if (lecturer == null || lecturer.startsWith("--")) {
+            showError("Please select a lecturer.");
+            return false;
+        }
+        if (slot == null || slot.startsWith("--")) {
+            showError("Please select a time slot.");
+            return false;
+        }
+        if (reason.trim().isEmpty()) {
+            showError("Please provide a reason for the consultation.");
+            return false;
+        }
+        if (reason.trim().length() < 10) {
+            showError("Reason must be at least 10 characters long.");
+            return false;
+        }
+        return true;
+    }
+
+    private void showError(String message) {
+        JOptionPane.showMessageDialog(this, message, 
+            "Validation Error", JOptionPane.ERROR_MESSAGE);
+    }
 
     private JButton createStyledButton(String text, Color bgColor) {
         JButton button = new JButton(text);
@@ -838,13 +745,6 @@ public class StudentDashboard extends JFrame {
         button.setOpaque(true);
         button.setContentAreaFilled(true);
         return button;
-    }
-    
-
-    private void showError(String message) {
-        JOptionPane.showMessageDialog(this, message, 
-            "Validation Error", 
-            JOptionPane.ERROR_MESSAGE);
     }
     
 

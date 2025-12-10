@@ -1,14 +1,57 @@
 @echo off
-REM Clean previous build
-if exist target\classes rmdir /s /q target\classes
-mkdir target\classes
+setlocal enabledelayedexpansion
 
-REM Compile to target/classes directory
-javac -d target/classes -sourcepath src/main/java src/main/java/Main.java src/main/java/model/*.java src/main/java/file/*.java src/main/java/service/*.java src/main/java/ui/*.java src/main/java/util/*.java
+echo Checking if Maven is installed...
 
-REM Copy resources to target
-xcopy /s /y /q src\main\resources\*.* target\classes\ >nul 2>&1
+:: ------------------------------------
+:: Check if Maven exists
+:: ------------------------------------
+mvn -version >nul 2>&1
+if %ERRORLEVEL% NEQ 0 (
+    echo Maven is not installed.
+    echo Opening Maven download page...
 
-REM Run from target/classes
-cd target\classes
-java Main
+    start https://downloads.apache.org/maven/maven-3/  || (
+        echo Failed to open browser. Please install Maven manually.
+        exit /b 1
+    )
+
+    echo After installing Maven, run this script again.
+    pause
+    exit /b 0
+) else (
+    echo Maven is already installed.
+)
+
+:: ------------------------------------
+:: Compile the project
+:: ------------------------------------
+echo Downloading dependencies and compiling...
+mvn clean compile
+if %ERRORLEVEL% NEQ 0 (
+    echo Compilation failed!
+    exit /b 1
+)
+
+:: ------------------------------------
+:: Run the application
+:: ------------------------------------
+echo Running application...
+
+cd target\classes || (
+    echo target\classes not found!
+    exit /b 1
+)
+
+echo Building classpath...
+
+:: Run Maven again but capture output to CP variable
+for /f "delims=" %%i in ('mvn -q dependency:build-classpath -Dmdep.outputFile=CON') do (
+    set CP=%%i
+)
+
+:: Running program
+echo Launching Java program...
+java -cp ".;!CP!" Main
+
+endlocal

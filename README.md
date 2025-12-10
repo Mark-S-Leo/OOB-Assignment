@@ -3,12 +3,12 @@
 
 
 # users
-| ID       | Role     | Email              | Password | Name        |
-|----------|----------|--------------------|----------|-------------|
-| TP001    | Student  | student@email.com  | 123456   | Mark Leo    |
-| LEC-001  | Lecturer | lecturer@email.com | 123456   | Dr Lim      |
-| STF-001  | Staff    | staff@email.com    | 123456   | Sarah Wong  |
-| ADM-001  | Admin    | admin@email.com    | 123456   | Admin User  |
+ Role     | Email              | Password | Name        |
+----------|--------------------|----------|-------------|
+ Student  | student@email.com  | password123   | Mark Leo    |
+ Lecturer | lecturer@email.com | password123   | Dr Lim      |
+ Staff    | staff@email.com    | password123   | Sarah Wong  |
+ Admin    | admin@email.com    | password123   | Admin User  |
 
 ### How to Run
 bash run.sh for MacOS
