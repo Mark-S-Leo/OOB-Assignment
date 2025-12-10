@@ -6,12 +6,9 @@ import java.io.*;
 import java.util.ArrayList;
 import java.util.Scanner;
 
-/**
- * CHANGE: Updated file format to support email-based authentication and profile fields
- * File format: tp|role|name|email|hashedPassword|profilePicture|description|phoneNumber|address
- */
+
 public class UserFileManager {
-    private static final String FILE_PATH = "users.txt";
+    private static final String FILE_PATH = "src/main/resources/users.txt";
 
     // Load all users from file
     public static ArrayList<User> loadAll() {
@@ -138,7 +135,6 @@ public class UserFileManager {
         return null;
     }
 
-    // CHANGE: Updated email-based login validation to use plain text passwords
     /**
      * Validates user login using email and password
      * @param email User's email address
@@ -156,7 +152,6 @@ public class UserFileManager {
         return null;
     }
 
-    // CHANGE: Added method to find user by email
     /**
      * Find user by email address
      * @param email User's email

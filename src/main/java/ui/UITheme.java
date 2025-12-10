@@ -3,116 +3,51 @@ package ui;
 import java.awt.Color;
 import java.awt.Font;
 
-/**
- * Centralized UI Theme for Student Consultation Management System
- * 
- * This class contains all color constants, font definitions, and spacing
- * values used across the application to ensure consistent styling.
- * 
- * Benefits:
- * - Single source of truth for all UI styling
- * - Easy to update theme across entire application
- * - Supports future theming capabilities (light/dark mode)
- * - Improves maintainability and consistency
- * 
- * Usage:
- * Import statically in your UI classes:
- * import static ui.UITheme.*;
- * 
- * Then use directly:
- * panel.setBackground(PRIMARY_COLOR);
- * label.setForeground(TEXT_COLOR);
- */
 public class UITheme {
     
-    // ==================== COLOR PALETTE ====================
     
-    /**
-     * Primary brand color - Steel Blue
-     * Used for: Headers, primary buttons, accents
-     */
+
     public static final Color PRIMARY_COLOR = new Color(70, 130, 180);
     
-    /**
-     * Primary color hover state - Darker Steel Blue
-     * Used for: Button hover effects
-     */
+
     public static final Color PRIMARY_HOVER = new Color(56, 104, 144);
     
-    /**
-     * Main background color - Pure White
-     * Used for: Window backgrounds, main panels
-     */
+
     public static final Color BACKGROUND_COLOR = Color.WHITE;
     
-    /**
-     * Card/Panel background - Light Gray
-     * Used for: Cards, elevated panels, secondary backgrounds
-     */
+
     public static final Color CARD_COLOR = new Color(248, 249, 250);
     
-    /**
-     * Primary text color - Dark Gray
-     * Used for: Main text, labels, titles
-     */
+
     public static final Color TEXT_COLOR = new Color(33, 37, 41);
-    
-    /**
-     * Secondary text color - Medium Gray
-     * Used for: Descriptions, hints, secondary text
-     */
+
     public static final Color TEXT_SECONDARY = new Color(108, 117, 125);
     
-    /**
-     * Hover state color - Lighter Gray
-     * Used for: Card hover effects, button hover backgrounds
-     */
+
     public static final Color HOVER_COLOR = new Color(233, 236, 239);
     
-    /**
-     * Success color - Green
-     * Used for: Success messages, confirm buttons, positive states
-     */
+
     public static final Color SUCCESS_COLOR = new Color(40, 167, 69);
     
-    /**
-     * Success hover state - Darker Green
-     */
+
     public static final Color SUCCESS_HOVER = new Color(32, 134, 55);
     
-    /**
-     * Danger/Error color - Red
-     * Used for: Error messages, delete buttons, warnings
-     */
+
     public static final Color DANGER_COLOR = new Color(220, 53, 69);
     
-    /**
-     * Danger hover state - Darker Red
-     */
+
     public static final Color DANGER_HOVER = new Color(176, 42, 55);
     
-    /**
-     * Warning color - Orange
-     * Used for: Warning messages, caution states
-     */
+
     public static final Color WARNING_COLOR = new Color(255, 193, 7);
     
-    /**
-     * Info color - Light Blue
-     * Used for: Information messages, neutral states
-     */
+
     public static final Color INFO_COLOR = new Color(23, 162, 184);
     
-    /**
-     * Border color - Light Gray
-     * Used for: Card borders, input borders, dividers
-     */
+
     public static final Color BORDER_COLOR = new Color(220, 220, 220);
     
-    /**
-     * Input border color - Medium Gray
-     * Used for: Text field borders, dropdown borders
-     */
+
     public static final Color INPUT_BORDER = new Color(200, 200, 200);
     
     /**

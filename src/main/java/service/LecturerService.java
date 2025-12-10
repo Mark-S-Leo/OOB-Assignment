@@ -7,13 +7,20 @@ import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 
 public class LecturerService {
-    private String lecturerTp;
+    private final String lecturerTp;
 
     public LecturerService(String lecturerTp) {
         this.lecturerTp = lecturerTp;
     }
 
-    // Create a consultation slot
+    /**
+     * Creates a new consultation slot
+     * Validates that the date is not in the past
+     * @param date The date in YYYY-MM-DD format
+     * @param startTime The start time in HH:mm format
+     * @param endTime The end time in HH:mm format
+     * @return true if slot created successfully, false otherwise
+     */
     public boolean createSlot(String date, String startTime, String endTime) {
         // Check if date is not in the past
         try {
@@ -41,17 +48,28 @@ public class LecturerService {
         return true;
     }
 
-    // View own slots
+    /**
+     * Retrieves all slots created by this lecturer
+     * @return List of slots belonging to this lecturer
+     */
     public ArrayList<Slot> viewOwnSlots() {
         return SlotFileManager.getSlotsByLecturer(lecturerTp);
     }
 
-    // View approved bookings (appointments)
+    /**
+     * Retrieves all approved appointments for this lecturer
+     * @return List of appointments for this lecturer
+     */
     public ArrayList<Appointment> viewApprovedBookings() {
         return AppointmentFileManager.getAppointmentsByLecturer(lecturerTp);
     }
 
-    // Cancel slot (can only cancel if OPEN)
+    /**
+     * Cancels an open consultation slot
+     * Only OPEN slots can be cancelled
+     * @param slotId The ID of the slot to cancel
+     * @return true if cancelled successfully, false otherwise
+     */
     public boolean cancelSlot(String slotId) {
         Slot slot = SlotFileManager.findById(slotId);
         
@@ -76,7 +94,14 @@ public class LecturerService {
         return true;
     }
 
-    // Update slot
+    /**
+     * Updates an existing consultation slot
+     * @param slotId The ID of the slot to update
+     * @param newDate The new date in YYYY-MM-DD format
+     * @param newStartTime The new start time in HH:mm format
+     * @param newEndTime The new end time in HH:mm format
+     * @return true if updated successfully, false otherwise
+     */
     public boolean updateSlot(String slotId, String newDate, String newStartTime, String newEndTime) {
         Slot slot = SlotFileManager.findById(slotId);
         

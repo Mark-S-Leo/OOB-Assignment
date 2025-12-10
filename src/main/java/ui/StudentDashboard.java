@@ -22,13 +22,15 @@ import java.util.Map;
 public class StudentDashboard extends JFrame {
     private User user;
     private StudentService studentService;
-    private Map<String, String> lecturerMap;
+    private Map<String, String> lecturerMap; // tp -> name
+    private Map<String, String> lecturerNameToTpMap; // name -> tp (optimized reverse lookup)
     private JPopupMenu profileMenu;
 
     public StudentDashboard(User user) {
         this.user = user;
         this.studentService = new StudentService(user.getTp());
         this.lecturerMap = new HashMap<>();
+        this.lecturerNameToTpMap = new HashMap<>();
         loadLecturerData();
 
         setTitle("Student Consultation Portal");
@@ -43,10 +45,17 @@ public class StudentDashboard extends JFrame {
         add(createFooterPanel(), BorderLayout.SOUTH);
     }
     
+    /**
+     * Load lecturer data once at initialization for better performance
+     * Creates both forward (tp->name) and reverse (name->tp) lookups
+     */
     private void loadLecturerData() {
         UserFileManager.loadAll().stream()
             .filter(u -> "LECTURER".equalsIgnoreCase(u.getRole()))
-            .forEach(u -> lecturerMap.put(u.getTp(), u.getName()));
+            .forEach(u -> {
+                lecturerMap.put(u.getTp(), u.getName());
+                lecturerNameToTpMap.put(u.getName(), u.getTp());
+            });
     }
     
     private String getLecturerName(String tp) {
@@ -199,12 +208,6 @@ public class StudentDashboard extends JFrame {
         JPanel panel = new JPanel(new FlowLayout(FlowLayout.CENTER));
         panel.setBackground(BACKGROUND_COLOR);
         panel.setBorder(BorderFactory.createEmptyBorder(SPACING_MD, SPACING_XL, SPACING_XL, SPACING_XL));
-        
-        JLabel footerLabel = new JLabel("Student Consultation Management System © 2025");
-        footerLabel.setFont(FONT_TINY);
-        footerLabel.setForeground(TEXT_SECONDARY);
-        
-        panel.add(footerLabel);
         return panel;
     }
 
@@ -318,25 +321,23 @@ public class StudentDashboard extends JFrame {
             slotIdMap.clear();
             
             if (selectedLecturer != null && !selectedLecturer.startsWith("--")) {
-                // Find lecturer TP from name
-                String lecturerTp = null;
-                for (Map.Entry<String, String> entry : lecturerMap.entrySet()) {
-                    if (entry.getValue().equals(selectedLecturer)) {
-                        lecturerTp = entry.getKey();
-                        break;
-                    }
-                }
+                // Use optimized reverse lookup map instead of iterating
+                String lecturerTp = lecturerNameToTpMap.get(selectedLecturer);
                 
                 if (lecturerTp != null) {
                     ArrayList<Slot> slots = studentService.viewAvailableSlots();
-                    for (Slot slot : slots) {
-                        if (slot.getLecturerTp().equals(lecturerTp)) {
+                    
+                    // Filter and sort in one pass
+                    slots.stream()
+                        .filter(slot -> slot.getLecturerTp().equals(lecturerTp))
+                        .sorted((s1, s2) -> s1.getStartTime().compareTo(s2.getStartTime()))
+                        .forEach(slot -> {
                             String displayText = slot.getDate() + " | " + 
                                                slot.getStartTime() + " - " + slot.getEndTime();
                             slotCombo.addItem(displayText);
                             slotIdMap.put(displayText, slot.getSlotId());
-                        }
-                    }
+                        });
+                    
                     slotCombo.setEnabled(slotCombo.getItemCount() > 1);
                 }
             }
@@ -381,11 +382,8 @@ public class StudentDashboard extends JFrame {
             
             if (!validateRequestInput(selectedLecturer, selectedSlot, reason)) return;
             
-            String lecturerTp = lecturerMap.entrySet().stream()
-                .filter(entry -> entry.getValue().equals(selectedLecturer))
-                .map(Map.Entry::getKey)
-                .findFirst().orElse(null);
-            
+            // Use optimized reverse lookup instead of stream
+            String lecturerTp = lecturerNameToTpMap.get(selectedLecturer);
             String slotId = slotIdMap.get(selectedSlot);
             
             if (lecturerTp != null && slotId != null && 
@@ -472,8 +470,9 @@ public class StudentDashboard extends JFrame {
         buttonPanel.setBackground(Color.WHITE);
         buttonPanel.setBorder(BorderFactory.createEmptyBorder(10, 20, 20, 20));
         
-        JButton cancelBtn = createStyledButton("Cancel Request", DANGER_COLOR);
         JButton closeBtn = createStyledButton("Close", TEXT_SECONDARY);
+        JButton cancelBtn = createStyledButton("Cancel Request", DANGER_COLOR);
+
         
         cancelBtn.addActionListener(e -> {
             int selectedRow = table.getSelectedRow();
@@ -495,8 +494,8 @@ public class StudentDashboard extends JFrame {
         
         closeBtn.addActionListener(e -> dialog.dispose());
         
-        buttonPanel.add(cancelBtn);
         buttonPanel.add(closeBtn);
+        buttonPanel.add(cancelBtn);
         
         dialog.add(buttonPanel, BorderLayout.SOUTH);
         
@@ -637,8 +636,8 @@ public class StudentDashboard extends JFrame {
             return;
         }
 
-        String[] columns = {"Appointment ID", "Lecturer", "Date", "Time", "Location", "Status"};
-        Object[][] data = new Object[appointments.size()][6];
+        String[] columns = {"Appointment ID", "Lecturer", "Date", "Time", "Status"};
+        Object[][] data = new Object[appointments.size()][5];
         
         for (int i = 0; i < appointments.size(); i++) {
             model.Appointment apt = appointments.get(i);
@@ -647,7 +646,6 @@ public class StudentDashboard extends JFrame {
                 lecturerMap.getOrDefault(apt.getLecturerTp(), apt.getLecturerTp()),
                 apt.getDate(),
                 apt.getStartTime(),
-                "To be decided",
                 apt.getStatus()
             };
         }
