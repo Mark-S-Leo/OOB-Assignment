@@ -6,7 +6,7 @@ import java.util.ArrayList;
 import java.util.Scanner;
 
 public class SlotFileManager {
-    private static final String FILE_PATH = "../resources/slots.txt";
+    private static final String FILE_PATH = "slots.txt";
 
     // Load all slots from file
     public static ArrayList<Slot> loadAll() {
