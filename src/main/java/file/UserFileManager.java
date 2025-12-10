@@ -147,23 +147,12 @@ public class UserFileManager {
      */
     public static User validateLoginByEmail(String email, String password) {
         ArrayList<User> users = loadAll();
-        System.out.println("DEBUG: Loaded " + users.size() + " users");
-        System.out.println("DEBUG: Looking for email: '" + email + "' with password: '" + password + "'");
         
         for (User user : users) {
-            System.out.println("DEBUG: Checking user - Email: '" + user.getEmail() + "', Password: '" + user.getPassword() + "'");
-            // Check if email matches and password matches (plain text)
-            if (user.getEmail().equalsIgnoreCase(email)) {
-                System.out.println("DEBUG: Email matched!");
-                if (user.getPassword().equals(password)) {
-                    System.out.println("DEBUG: Password matched!");
-                    return user;
-                } else {
-                    System.out.println("DEBUG: Password did not match. Expected: '" + user.getPassword() + "', Got: '" + password + "'");
-                }
+            if (user.getEmail().equalsIgnoreCase(email) && user.getPassword().equals(password)) {
+                return user;
             }
         }
-        System.out.println("DEBUG: No match found");
         return null;
     }
 
