@@ -2,7 +2,6 @@ package ui;
 
 import model.User;
 import file.UserFileManager;
-import util.PasswordUtil; // CHANGE: Added import for password hashing utility
 import javax.swing.*;
 import java.awt.*;
 
@@ -68,14 +67,7 @@ public class LoginUI extends JFrame {
             return;
         }
 
-        // CHANGE: Added email format validation
-        if (!PasswordUtil.isValidEmail(email)) {
-            JOptionPane.showMessageDialog(this, "Invalid email format. Email must contain '@'.", 
-                                         "Error", JOptionPane.ERROR_MESSAGE);
-            return;
-        }
-
-        // CHANGE: Updated to use email-based login validation with hashed password
+        // CHANGE: Updated to use email-based login validation (plain text password)
         User user = UserFileManager.validateLoginByEmail(email, password);
 
         if (user == null) {

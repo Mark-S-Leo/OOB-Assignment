@@ -6,7 +6,7 @@ import java.util.ArrayList;
 import java.util.Scanner;
 
 public class RequestFileManager {
-    private static final String FILE_PATH = "../resources/requests.txt";
+    private static final String FILE_PATH = "requests.txt";
 
     // Load all requests from file
     public static ArrayList<Request> loadAll() {
@@ -119,5 +119,43 @@ public class RequestFileManager {
             }
         }
         return pendingRequests;
+    }
+    
+    /**
+     * Cancel a request and move it to cancelled_requests.txt
+     * @param requestId The request ID to cancel
+     * @param reason Cancellation reason
+     * @return true if cancelled successfully, false if request not found or already processed
+     */
+    public static boolean cancelRequest(String requestId, String reason) {
+        Request request = findById(requestId);
+        if (request == null) {
+            return false;
+        }
+        
+        // Only allow cancellation of pending requests
+        if (!"PENDING".equalsIgnoreCase(request.getStatus())) {
+            return false;
+        }
+        
+        // Create cancelled request record
+        String cancelledDate = java.time.LocalDateTime.now()
+            .format(java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
+        model.CancelledRequest cancelledRequest = new model.CancelledRequest(
+            request.getRequestId(),
+            request.getStudentTp(),
+            request.getLecturerTp(),
+            request.getSlotId(),
+            request.getReason(),
+            reason,
+            request.getStudentTp(), // Cancelled by student
+            cancelledDate
+        );
+        
+        // Save to cancelled_requests.txt
+        CancelledRequestFileManager.appendOne(cancelledRequest);
+        
+        // Delete from requests.txt
+        return delete(requestId);
     }
 }
