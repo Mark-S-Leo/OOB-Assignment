@@ -1,16 +1,18 @@
 package ui;
 
+
+
 import model.User;
 import file.UserFileManager;
 import javax.swing.*;
 import java.awt.*;
 
 /**
- * CHANGE: Updated login system from TP/password to email/password
- * Now validates email format and uses SHA-256 hashed passwords
+ * LoginUI provides email/password authentication.
+ * Updated from TP-based to email-based login system.
  */
 public class LoginUI extends JFrame {
-    private JTextField emailField; // CHANGE: Changed from tpField to emailField
+    private JTextField emailField;
     private JPasswordField passwordField;
     private JButton loginButton;
 
@@ -32,9 +34,8 @@ public class LoginUI extends JFrame {
         JPanel formPanel = new JPanel(new GridLayout(2, 2, 10, 10));
         formPanel.setBorder(BorderFactory.createEmptyBorder(20, 40, 20, 40));
 
-        // CHANGE: Updated label and field from "TP Number" to "Email"
         formPanel.add(new JLabel("Email:"));
-        emailField = new JTextField(); // CHANGE: Using emailField instead of tpField
+        emailField = new JTextField();
         formPanel.add(emailField);
 
         formPanel.add(new JLabel("Password:"));
@@ -56,18 +57,16 @@ public class LoginUI extends JFrame {
     }
 
     private void handleLogin() {
-        // CHANGE: Get email instead of TP number
+
         String email = emailField.getText().trim();
         String password = new String(passwordField.getPassword());
 
-        // CHANGE: Updated validation messages to reference email
         if (email.isEmpty() || password.isEmpty()) {
             JOptionPane.showMessageDialog(this, "Please enter both email and password.", 
                                          "Error", JOptionPane.ERROR_MESSAGE);
             return;
         }
 
-        // CHANGE: Updated to use email-based login validation (plain text password)
         User user = UserFileManager.validateLoginByEmail(email, password);
 
         if (user == null) {
@@ -83,9 +82,7 @@ public class LoginUI extends JFrame {
         
         dispose(); // Close login window
 
-        // CHANGE: Maintained role-based redirection to appropriate modules
-        // Student → Student Module, Lecturer → Lecturer Module, 
-        // Staff → Appointment Module, Admin → Admin Module
+
         switch (user.getRole().toUpperCase()) {
             case "STUDENT":
                 new StudentDashboard(user).setVisible(true); // Student Module

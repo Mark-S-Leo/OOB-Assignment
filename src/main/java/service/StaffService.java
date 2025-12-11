@@ -1,7 +1,11 @@
 package service;
 
-import model.*;
-import file.*;
+import model.Request;
+import model.Slot;
+import model.Appointment;
+import file.RequestFileManager;
+import file.SlotFileManager;
+import file.AppointmentFileManager;
 import java.util.ArrayList;
 
 public class StaffService {
@@ -11,17 +15,15 @@ public class StaffService {
         return RequestFileManager.getPendingRequests();
     }
 
-    // Approve request - creates an appointment
+    // Approve request - creates an appointment and deletes the request
     public boolean approveRequest(String requestId) {
         Request request = RequestFileManager.findById(requestId);
         
         if (request == null) {
-            System.out.println("Request not found.");
             return false;
         }
 
         if (!"PENDING".equalsIgnoreCase(request.getStatus())) {
-            System.out.println("Can only approve PENDING requests.");
             return false;
         }
 
@@ -31,10 +33,6 @@ public class StaffService {
             System.out.println("Slot not found.");
             return false;
         }
-
-        // Update request status
-        request.setStatus("APPROVED");
-        RequestFileManager.update(request);
 
         // Create appointment
         ArrayList<Appointment> allAppointments = AppointmentFileManager.loadAll();
@@ -53,26 +51,53 @@ public class StaffService {
         
         AppointmentFileManager.appendOne(newAppointment);
 
-        // Update slot status to BOOKED
-        slot.setStatus("BOOKED");
-        SlotFileManager.update(slot);
+        // Delete the slot since it's now booked
+        SlotFileManager.delete(request.getSlotId());
 
-        System.out.println("Request approved and appointment created: " + appointmentId);
+        // Delete the request from requests.txt
+        RequestFileManager.delete(requestId);
         return true;
     }
 
-    // Reject/Cancel request
-    public boolean cancelRequest(String requestId) {
+    // Reject/Cancel request with reason - creates cancelled appointment
+    public boolean cancelRequest(String requestId, String cancelReason) {
         Request request = RequestFileManager.findById(requestId);
         
         if (request == null) {
-            System.out.println("Request not found.");
             return false;
         }
 
-        request.setStatus("CANCELLED");
-        RequestFileManager.update(request);
-        System.out.println("Request cancelled successfully.");
+        // Get slot details
+        Slot slot = SlotFileManager.findById(request.getSlotId());
+        if (slot == null) {
+            return false;
+        }
+
+        // Release the slot back to OPEN
+        SlotFileManager.updateStatus(request.getSlotId(), "OPEN");
+
+        // Create cancelled appointment with cancel reason
+        ArrayList<Appointment> allAppointments = AppointmentFileManager.loadAll();
+        String appointmentId = "A" + (allAppointments.size() + 1);
+        
+        Appointment cancelledAppointment = new Appointment(
+            appointmentId,
+            requestId,
+            request.getStudentTp(),
+            request.getLecturerTp(),
+            request.getSlotId(),
+            slot.getDate(),
+            slot.getStartTime(),
+            "CANCELLED",
+            cancelReason != null ? cancelReason : "Cancelled by staff"
+        );
+        
+        AppointmentFileManager.appendOne(cancelledAppointment);
+
+        // Delete the request from requests.txt
+        RequestFileManager.delete(requestId);
+
+        System.out.println("Request cancelled and appointment created with status CANCELLED.");
         return true;
     }
 
@@ -126,11 +151,29 @@ public class StaffService {
         // Free up the slot
         Slot slot = SlotFileManager.findById(appointment.getSlotId());
         if (slot != null) {
-            slot.setStatus("OPEN");
-            SlotFileManager.update(slot);
+            SlotFileManager.updateStatus(appointment.getSlotId(), "OPEN");
         }
 
         System.out.println("Appointment cancelled successfully.");
+        return true;
+    }
+
+    // Complete appointment
+    public boolean completeAppointment(String appointmentId) {
+        Appointment appointment = AppointmentFileManager.findById(appointmentId);
+        
+        if (appointment == null) {
+            System.out.println("Appointment not found.");
+            return false;
+        }
+
+        appointment.setStatus("COMPLETED");
+        AppointmentFileManager.update(appointment);
+
+        // Delete the slot (completed appointments don't need slots anymore)
+        SlotFileManager.delete(appointment.getSlotId());
+
+        System.out.println("Appointment completed successfully.");
         return true;
     }
 }

@@ -23,20 +23,25 @@ public class RequestFileManager {
                 if (line.isEmpty()) continue;
                 
                 String[] parts = line.split("\\|");
-                if (parts.length >= 6) {
+                if (parts.length >= 9) {
                     String requestId = parts[0];
                     String studentTp = parts[1];
                     String lecturerTp = parts[2];
                     String slotId = parts[3];
-                    String reason = parts[4];
-                    String status = parts[5];
+                    String date = parts[4];
+                    String startTime = parts[5];
+                    String endTime = parts[6];
+                    String reason = parts[7];
+                    String status = parts[8];
+                    String cancelReason = parts.length >= 10 ? parts[9] : "";
                     
-                    Request request = new Request(requestId, studentTp, lecturerTp, slotId, reason, status);
+                    Request request = new Request(requestId, studentTp, lecturerTp, slotId, 
+                                                 date, startTime, endTime, reason, status, cancelReason);
                     requests.add(request);
                 }
             }
         } catch (FileNotFoundException e) {
-            System.err.println("Request file not found: " + e.getMessage());
+            // File doesn't exist yet, return empty list
         }
         
         return requests;
@@ -49,7 +54,7 @@ public class RequestFileManager {
                 writer.println(request.toString());
             }
         } catch (IOException e) {
-            System.err.println("Error saving requests: " + e.getMessage());
+            // Error saving, silent fail
         }
     }
 
@@ -59,7 +64,7 @@ public class RequestFileManager {
              PrintWriter writer = new PrintWriter(fw)) {
             writer.println(request.toString());
         } catch (IOException e) {
-            System.err.println("Error appending request: " + e.getMessage());
+            // Error appending, silent fail
         }
     }
 
@@ -138,24 +143,15 @@ public class RequestFileManager {
             return false;
         }
         
-        // Create cancelled request record
-        String cancelledDate = java.time.LocalDateTime.now()
-            .format(java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
-        model.CancelledRequest cancelledRequest = new model.CancelledRequest(
-            request.getRequestId(),
-            request.getStudentTp(),
-            request.getLecturerTp(),
-            request.getSlotId(),
-            request.getReason(),
-            reason,
-            request.getStudentTp(), // Cancelled by student
-            cancelledDate
-        );
+        // Release the slot back to OPEN status
+        SlotFileManager.updateStatus(request.getSlotId(), "OPEN");
         
-        // Save to cancelled_requests.txt
-        CancelledRequestFileManager.appendOne(cancelledRequest);
+        // Update request status and cancel reason
+        request.setStatus("CANCELLED");
+        request.setCancelReason(reason);
         
-        // Delete from requests.txt
+        // Update the request in file (or just delete it)
+        // For now, we'll just delete cancelled requests
         return delete(requestId);
     }
 }

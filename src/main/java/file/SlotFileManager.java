@@ -36,7 +36,7 @@ public class SlotFileManager {
                 }
             }
         } catch (FileNotFoundException e) {
-            System.err.println("Slot file not found: " + e.getMessage());
+            // File doesn't exist yet, return empty list
         }
         
         return slots;
@@ -49,7 +49,7 @@ public class SlotFileManager {
                 writer.println(slot.toString());
             }
         } catch (IOException e) {
-            System.err.println("Error saving slots: " + e.getMessage());
+            // Error saving, silent fail
         }
     }
 
@@ -59,7 +59,7 @@ public class SlotFileManager {
              PrintWriter writer = new PrintWriter(fw)) {
             writer.println(slot.toString());
         } catch (IOException e) {
-            System.err.println("Error appending slot: " + e.getMessage());
+            // Error appending, silent fail
         }
     }
 
@@ -119,5 +119,18 @@ public class SlotFileManager {
             }
         }
         return lecturerSlots;
+    }
+
+    // Update slot status by ID
+    public static boolean updateStatus(String slotId, String newStatus) {
+        ArrayList<Slot> slots = loadAll();
+        for (Slot slot : slots) {
+            if (slot.getSlotId().equals(slotId)) {
+                slot.setStatus(newStatus);
+                saveAll(slots);
+                return true;
+            }
+        }
+        return false;
     }
 }

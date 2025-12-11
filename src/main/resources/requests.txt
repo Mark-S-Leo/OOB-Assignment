@@ -1,2 +1,0 @@
-R1|TP001|LEC-001|S1|Need help with Object-Oriented Programming assignment|PENDING
-R2|TP001|LEC-002|S5|Consultation for project proposal review|PENDING

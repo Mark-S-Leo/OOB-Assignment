@@ -133,19 +133,19 @@ public class StudentDashboard extends JFrame {
         // Create action cards with professional icons
         panel.add(createActionCard("View Available Slots", 
             "Browse consultation slots from lecturers", 
-            "◉", e -> viewAvailableSlots()));
+            "◷", e -> viewAvailableSlots()));
             
         panel.add(createActionCard("Create Request", 
             "Request a consultation with a lecturer", 
-            "✎", e -> createRequest()));
+            "⊕", e -> createRequest()));
             
         panel.add(createActionCard("My Requests", 
             "View your consultation request history", 
-            "☰", e -> viewMyRequests()));
+            "≡", e -> viewMyRequests()));
             
         panel.add(createActionCard("My Appointments", 
             "View approved consultation appointments", 
-            "✓", e -> viewMyAppointments()));
+            "✔", e -> viewMyAppointments()));
         
         return panel;
     }
@@ -413,11 +413,12 @@ public class StudentDashboard extends JFrame {
      * View student's consultation requests in a modern table with cancellation
      */
     private void viewMyRequests() {
-        ArrayList<Request> requests = studentService.viewOwnRequests();
+        ArrayList<Request> allRequests = studentService.viewOwnRequests();
         
-        if (requests.isEmpty()) {
+        // All requests in requests.txt are PENDING (approved/cancelled go to appointments)
+        if (allRequests.isEmpty()) {
             JOptionPane.showMessageDialog(this, 
-                "You have not made any consultation requests yet.", 
+                "You have no pending consultation requests.", 
                 "No Requests", 
                 JOptionPane.INFORMATION_MESSAGE);
             return;
@@ -427,22 +428,20 @@ public class StudentDashboard extends JFrame {
         JDialog dialog = new JDialog(this, "My Consultation Requests", true);
         dialog.setLayout(new BorderLayout(10, 10));
         
-        // Create table data
+        // Create table data - removed Cancel Reason column
         String[] columns = {"Request ID", "Lecturer", "Date", "Time", "Status", "Reason"};
         DefaultTableModel tableModel = new DefaultTableModel(columns, 0) {
             @Override
             public boolean isCellEditable(int row, int column) { return false; }
         };
         
-        requests.forEach(req -> {
-            String slotInfo = getSlotInfo(req.getSlotId());
-            String[] parts = slotInfo.split("\\|");
+        allRequests.forEach(req -> {
             String reason = req.getReason();
             tableModel.addRow(new Object[]{
                 req.getRequestId(),
                 getLecturerName(req.getLecturerTp()),
-                parts.length > 0 ? parts[0] : "N/A",
-                parts.length > 1 ? parts[1] : "N/A",
+                req.getDate(),
+                req.getStartTime() + " - " + req.getEndTime(),
                 req.getStatus(),
                 reason.length() > 30 ? reason.substring(0, 30) + "..." : reason
             });
@@ -454,6 +453,8 @@ public class StudentDashboard extends JFrame {
         table.setGridColor(GRID_COLOR);
         table.setSelectionBackground(SELECTION_COLOR);
         table.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+        table.setPreferredScrollableViewportSize(new Dimension(850, 350));
+        table.setFillsViewportHeight(true);
         
         JTableHeader header = table.getTableHeader();
         header.setFont(FONT_TABLE_HEADER);
@@ -505,7 +506,7 @@ public class StudentDashboard extends JFrame {
         
         // Add right-click context menu
         JPopupMenu contextMenu = new JPopupMenu();
-        JMenuItem cancelMenuItem = new JMenuItem("🚫 Cancel Request");
+        JMenuItem cancelMenuItem = new JMenuItem("⊗ Cancel Request");
         cancelMenuItem.setFont(FONT_SMALL);
         cancelMenuItem.addActionListener(e -> {
             int row = table.getSelectedRow();
@@ -606,8 +607,13 @@ public class StudentDashboard extends JFrame {
                     JOptionPane.INFORMATION_MESSAGE);
                 cancelDialog.dispose();
                 
-                // Refresh the table with updated data from file
-                refreshRequestsTable(tableModel);
+                // Remove the row from table
+                tableModel.removeRow(row);
+                
+                // Close parent dialog if no more rows
+                if (tableModel.getRowCount() == 0) {
+                    parentDialog.dispose();
+                }
             } else {
                 showError("Failed to cancel request. It may have already been processed.");
             }
@@ -631,63 +637,142 @@ public class StudentDashboard extends JFrame {
         
         if (appointments.isEmpty()) {
             JOptionPane.showMessageDialog(this, 
-                "You have no approved appointments yet.", 
+                "You have no appointments.", 
                 "No Appointments", JOptionPane.INFORMATION_MESSAGE);
             return;
         }
 
-        String[] columns = {"Appointment ID", "Lecturer", "Date", "Time", "Status"};
-        Object[][] data = new Object[appointments.size()][5];
-        
-        for (int i = 0; i < appointments.size(); i++) {
-            model.Appointment apt = appointments.get(i);
-            data[i] = new Object[]{
-                apt.getAppointmentId(),
-                lecturerMap.getOrDefault(apt.getLecturerTp(), apt.getLecturerTp()),
-                apt.getDate(),
-                apt.getStartTime(),
-                apt.getStatus()
-            };
-        }
-        
-        JTable table = createStyledTable(data, columns);
-        table.setRowHeight(35);
-        
-        JScrollPane scrollPane = new JScrollPane(table);
-        scrollPane.setPreferredSize(new Dimension(800, 400));
-        scrollPane.setBorder(BorderFactory.createEmptyBorder());
-        
-        JOptionPane.showMessageDialog(this, scrollPane, 
-            "My Approved Appointments", JOptionPane.PLAIN_MESSAGE);
-    }
-    
-    private void refreshRequestsTable(DefaultTableModel tableModel) {
-        tableModel.setRowCount(0);
-        
-        studentService.viewOwnRequests().forEach(req -> {
-            String slotInfo = getSlotInfo(req.getSlotId());
-            String[] parts = slotInfo.split("\\|");
-            String reason = req.getReason();
-            tableModel.addRow(new Object[]{
-                req.getRequestId(),
-                getLecturerName(req.getLecturerTp()),
-                parts.length > 0 ? parts[0] : "N/A",
-                parts.length > 1 ? parts[1] : "N/A",
-                req.getStatus(),
-                reason.length() > 30 ? reason.substring(0, 30) + "..." : reason
-            });
-        });
-    }
-    
-    private String getSlotInfo(String slotId) {
-        return studentService.viewAvailableSlots().stream()
-            .filter(slot -> slot.getSlotId().equals(slotId))
-            .findFirst()
-            .map(slot -> slot.getDate() + "|" + slot.getStartTime() + " - " + slot.getEndTime())
-            .orElse("N/A|N/A");
-    }
-    
+        // Create dialog
+        JDialog dialog = new JDialog(this, "My Appointments", true);
+        dialog.setLayout(new BorderLayout(10, 10));
+        dialog.setSize(800, 500);
+        dialog.setLocationRelativeTo(this);
 
+        // Main panel with vertical layout for appointments
+        JPanel mainPanel = new JPanel();
+        mainPanel.setLayout(new BoxLayout(mainPanel, BoxLayout.Y_AXIS));
+        mainPanel.setBackground(Color.WHITE);
+
+        // Header panel
+        JPanel headerPanel = new JPanel(new GridLayout(1, 5));
+        headerPanel.setBackground(CARD_COLOR);
+        headerPanel.setBorder(BorderFactory.createEmptyBorder(8, 10, 8, 10));
+        headerPanel.setMaximumSize(new Dimension(Integer.MAX_VALUE, 35));
+        headerPanel.setPreferredSize(new Dimension(750, 35));
+        
+        String[] headers = {"Appointment ID", "Lecturer", "Date", "Time", "Status"};
+        for (String header : headers) {
+            JLabel headerLabel = new JLabel(header);
+            headerLabel.setFont(FONT_TABLE_HEADER);
+            headerLabel.setForeground(TEXT_COLOR);
+            headerPanel.add(headerLabel);
+            
+        }
+        mainPanel.add(headerPanel);
+
+        // Track expanded states
+        java.util.Set<String> expandedApts = new java.util.HashSet<>();
+
+        // Create appointment rows
+        for (model.Appointment apt : appointments) {
+            JPanel rowContainer = new JPanel();
+            rowContainer.setLayout(new BoxLayout(rowContainer, BoxLayout.Y_AXIS));
+            rowContainer.setBackground(Color.WHITE);
+
+            // Main appointment row
+            JPanel aptRow = new JPanel(new GridLayout(1, 5));
+            aptRow.setBackground(Color.WHITE);
+            aptRow.setBorder(BorderFactory.createMatteBorder(0, 0, 1, 0, GRID_COLOR));
+            aptRow.setMaximumSize(new Dimension(Integer.MAX_VALUE, TABLE_ROW_HEIGHT));
+            aptRow.setPreferredSize(new Dimension(750, TABLE_ROW_HEIGHT));
+
+            JLabel idLabel = new JLabel(apt.getAppointmentId());
+            JLabel lecLabel = new JLabel(lecturerMap.getOrDefault(apt.getLecturerTp(), apt.getLecturerTp()));
+            JLabel dateLabel = new JLabel(apt.getDate());
+            JLabel timeLabel = new JLabel(apt.getStartTime());
+            
+            JLabel statusLabel = new JLabel(apt.getStatus().equalsIgnoreCase("CANCELLED") ? "Cancelled ▼" : apt.getStatus());
+            
+            idLabel.setFont(FONT_SMALL);
+            lecLabel.setFont(FONT_SMALL);
+            dateLabel.setFont(FONT_SMALL);
+            timeLabel.setFont(FONT_SMALL);
+            statusLabel.setFont(FONT_SMALL);
+
+            aptRow.add(idLabel);
+            aptRow.add(lecLabel);
+            aptRow.add(dateLabel);
+            aptRow.add(timeLabel);
+            aptRow.add(statusLabel);
+
+            rowContainer.add(aptRow);
+
+            // Add click listener for cancelled appointments
+            if (apt.getStatus().equalsIgnoreCase("CANCELLED")) {
+                aptRow.setCursor(new java.awt.Cursor(java.awt.Cursor.HAND_CURSOR));
+                aptRow.addMouseListener(new java.awt.event.MouseAdapter() {
+                    @Override
+                    public void mouseClicked(java.awt.event.MouseEvent e) {
+                        String aptId = apt.getAppointmentId();
+                        if (expandedApts.contains(aptId)) {
+                            // Collapse - remove reason panel
+                            if (rowContainer.getComponentCount() > 1) {
+                                rowContainer.remove(1);
+                            }
+                            expandedApts.remove(aptId);
+                            statusLabel.setText("Cancelled ▼");
+                        } else {
+                            // Expand - add reason panel
+                            String reason = apt.getCancelReason();
+                            if (reason == null || reason.trim().isEmpty()) {
+                                reason = "No cancellation reason provided.";
+                            }
+
+                            JPanel reasonPanel = new JPanel(new BorderLayout());
+                            reasonPanel.setBackground(new Color(255, 250, 240));
+                            reasonPanel.setBorder(BorderFactory.createCompoundBorder(
+                                BorderFactory.createMatteBorder(0, 0, 1, 0, GRID_COLOR),
+                                BorderFactory.createEmptyBorder(10, 15, 10, 15)
+                            ));
+                            reasonPanel.setMaximumSize(new Dimension(Integer.MAX_VALUE, 50));
+
+                            JLabel reasonLabel = new JLabel("Reason: " + reason);
+                            reasonLabel.setFont(FONT_SMALL.deriveFont(java.awt.Font.ITALIC));
+                            reasonPanel.add(reasonLabel, BorderLayout.WEST);
+
+                            rowContainer.add(reasonPanel);
+                            expandedApts.add(aptId);
+                            statusLabel.setText("Cancelled ▲");
+                        }
+                        
+                        rowContainer.revalidate();
+                        rowContainer.repaint();
+                    }
+                });
+            }
+
+            mainPanel.add(rowContainer);
+        }
+
+        JScrollPane scrollPane = new JScrollPane(mainPanel);
+        scrollPane.setBorder(BorderFactory.createEmptyBorder(20, 20, 10, 20));
+        
+        dialog.add(scrollPane, BorderLayout.CENTER);
+        
+        // Button panel
+        JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 10, 10));
+        buttonPanel.setBackground(Color.WHITE);
+        buttonPanel.setBorder(BorderFactory.createEmptyBorder(10, 20, 20, 20));
+        
+        JButton closeBtn = createStyledButton("Close", TEXT_SECONDARY);
+        closeBtn.addActionListener(e -> dialog.dispose());
+        
+        buttonPanel.add(closeBtn);
+        dialog.add(buttonPanel, BorderLayout.SOUTH);
+        
+        dialog.setVisible(true);
+    }
+    
     private JTable createStyledTable(Object[][] data, String[] columns) {
         DefaultTableModel model = new DefaultTableModel(data, columns) {
             @Override

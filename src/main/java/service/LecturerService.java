@@ -1,7 +1,9 @@
 package service;
 
-import model.*;
-import file.*;
+import model.Slot;
+import model.Appointment;
+import file.SlotFileManager;
+import file.AppointmentFileManager;
 import java.util.ArrayList;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
@@ -25,14 +27,10 @@ public class LecturerService {
         // Check if date is not in the past
         try {
             LocalDate slotDate = LocalDate.parse(date, DateTimeFormatter.ISO_LOCAL_DATE);
-            LocalDate today = LocalDate.now();
-            
-            if (slotDate.isBefore(today)) {
-                System.out.println("Cannot create slot in the past.");
+            if (slotDate.isBefore(LocalDate.now())) {
                 return false;
             }
         } catch (Exception e) {
-            System.out.println("Invalid date format. Use YYYY-MM-DD.");
             return false;
         }
 
@@ -43,8 +41,6 @@ public class LecturerService {
         // Create new slot
         Slot newSlot = new Slot(slotId, lecturerTp, date, startTime, endTime, "OPEN");
         SlotFileManager.appendOne(newSlot);
-
-        System.out.println("Slot created successfully: " + slotId);
         return true;
     }
 
@@ -74,23 +70,19 @@ public class LecturerService {
         Slot slot = SlotFileManager.findById(slotId);
         
         if (slot == null) {
-            System.out.println("Slot not found.");
             return false;
         }
 
         if (!slot.getLecturerTp().equals(lecturerTp)) {
-            System.out.println("You can only cancel your own slots.");
             return false;
         }
 
         if (!"OPEN".equalsIgnoreCase(slot.getStatus())) {
-            System.out.println("Can only cancel OPEN slots.");
             return false;
         }
 
         slot.setStatus("CANCELLED");
         SlotFileManager.update(slot);
-        System.out.println("Slot cancelled successfully.");
         return true;
     }
 
@@ -106,12 +98,10 @@ public class LecturerService {
         Slot slot = SlotFileManager.findById(slotId);
         
         if (slot == null) {
-            System.out.println("Slot not found.");
             return false;
         }
 
         if (!slot.getLecturerTp().equals(lecturerTp)) {
-            System.out.println("You can only update your own slots.");
             return false;
         }
 
@@ -119,8 +109,6 @@ public class LecturerService {
         slot.setStartTime(newStartTime);
         slot.setEndTime(newEndTime);
         SlotFileManager.update(slot);
-        
-        System.out.println("Slot updated successfully.");
         return true;
     }
 }

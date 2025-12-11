@@ -9,6 +9,8 @@ public class UITheme {
 
     public static final Color PRIMARY_COLOR = new Color(70, 130, 180);
     
+    // Staff-specific color (professional teal/green)
+    public static final Color STAFF_COLOR = new Color(32, 148, 108); // Teal green
 
     public static final Color PRIMARY_HOVER = new Color(56, 104, 144);
     
@@ -274,22 +276,6 @@ public class UITheme {
         int g = Math.min(255, (int) (color.getGreen() + (255 - color.getGreen()) * percentage));
         int b = Math.min(255, (int) (color.getBlue() + (255 - color.getBlue()) * percentage));
         return new Color(r, g, b);
-    }
-    
-    /**
-     * Future: Enable dark mode
-     * This method is a placeholder for future dark mode implementation
-     */
-    public static void enableDarkMode() {
-        // TODO: Implement dynamic theme switching
-        // This would swap light colors with dark equivalents
-    }
-    
-    /**
-     * Future: Enable light mode (default)
-     */
-    public static void enableLightMode() {
-        // TODO: Implement dynamic theme switching
     }
     
     // Private constructor to prevent instantiation
