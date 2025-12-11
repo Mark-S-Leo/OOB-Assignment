@@ -70,11 +70,13 @@ public class UserIdGenerator {
     
     /**
      * Get the next available number for a given role
+     * Implements gap-filling logic to reuse deleted IDs
      */
     private static int getNextNumberForRole(String role, ArrayList<User> existingUsers) {
         String prefix = getPrefixForRole(role);
-        int maxNumber = 0;
+        ArrayList<Integer> existingNumbers = new ArrayList<>();
         
+        // Collect all existing numbers for this role
         for (User user : existingUsers) {
             if (user.getRole().equalsIgnoreCase(role)) {
                 String userId = user.getTp();
@@ -83,9 +85,7 @@ public class UserIdGenerator {
                     String numberPart = userId.replace(prefix, "").replaceAll("[^0-9]", "");
                     if (!numberPart.isEmpty()) {
                         int number = Integer.parseInt(numberPart);
-                        if (number > maxNumber) {
-                            maxNumber = number;
-                        }
+                        existingNumbers.add(number);
                     }
                 } catch (NumberFormatException e) {
                     // Skip if can't parse number
@@ -93,7 +93,25 @@ public class UserIdGenerator {
             }
         }
         
-        return maxNumber + 1;
+        // If no existing users, start with 1
+        if (existingNumbers.isEmpty()) {
+            return 1;
+        }
+        
+        // Sort the numbers
+        existingNumbers.sort(Integer::compareTo);
+        
+        // Find the first gap
+        for (int i = 0; i < existingNumbers.size(); i++) {
+            int expected = i + 1;
+            if (existingNumbers.get(i) != expected) {
+                // Found a gap!
+                return expected;
+            }
+        }
+        
+        // No gap found, return next sequential number
+        return existingNumbers.get(existingNumbers.size() - 1) + 1;
     }
     
     /**
