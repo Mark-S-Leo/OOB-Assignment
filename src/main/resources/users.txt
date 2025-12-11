@@ -4,3 +4,4 @@ LEC-002|LECTURER|Dr Sarah Chen|lecturer2@email.com|password123|default|Expert in
 LEC-003|LECTURER|Prof James Wong|lecturer3@email.com|password123|default|Database Systems and Web Development Specialist||
 STF-001|STAFF|Sarah Wong|staff@email.com|password123|default|Administrative Staff||
 ADM-001|ADMIN|Admin User|admin@email.com|password123|default|System Administrator||
+TP002|STUDENT|swan yee htet|swan@email.com|swan1|/Users/swanyeehtet1/Desktop/Passport Photo.jpg|||

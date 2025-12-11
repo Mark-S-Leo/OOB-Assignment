@@ -11,6 +11,9 @@ public class UITheme {
     
     // Staff-specific color (professional teal/green)
     public static final Color STAFF_COLOR = new Color(32, 148, 108); // Teal green
+    
+    // Admin-specific color (professional purple/indigo)
+    public static final Color ADMIN_COLOR = new Color(103, 58, 183); // Deep purple
 
     public static final Color PRIMARY_HOVER = new Color(56, 104, 144);
     
