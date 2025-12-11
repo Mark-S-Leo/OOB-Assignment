@@ -1,7 +1,11 @@
 package service;
 
-import model.*;
-import file.*;
+import model.User;
+import model.Student;
+import model.Lecturer;
+import model.Staff;
+import model.Admin;
+import file.UserFileManager;
 import java.util.ArrayList;
 
 public class AdminService {
@@ -11,7 +15,6 @@ public class AdminService {
         // Check if user already exists
         User existingUser = UserFileManager.findById(tp);
         if (existingUser != null) {
-            System.out.println("User with TP " + tp + " already exists.");
             return false;
         }
 
@@ -31,12 +34,10 @@ public class AdminService {
                 newUser = new Admin(tp, name, email, password);
                 break;
             default:
-                System.out.println("Invalid role.");
                 return false;
         }
 
         UserFileManager.appendOne(newUser);
-        System.out.println("User created successfully: " + tp);
         return true;
     }
 

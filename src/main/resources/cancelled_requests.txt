@@ -1,2 +1,0 @@
-# Cancelled Requests
-# Format: RequestID|StudentTP|LecturerTP|SlotID|OriginalReason|CancellationReason|CancelledBy|CancelledDate

@@ -5,16 +5,32 @@ public class Request {
     private String studentTp;
     private String lecturerTp;
     private String slotId;
+    private String date;
+    private String startTime;
+    private String endTime;
     private String reason;
     private String status;
+    private String cancelReason;
 
-    public Request(String requestId, String studentTp, String lecturerTp, String slotId, String reason, String status) {
+    // Constructor with date and time (preferred)
+    public Request(String requestId, String studentTp, String lecturerTp, String slotId, 
+                   String date, String startTime, String endTime, String reason, String status) {
+        this(requestId, studentTp, lecturerTp, slotId, date, startTime, endTime, reason, status, "");
+    }
+    
+    // Full constructor with cancelReason
+    public Request(String requestId, String studentTp, String lecturerTp, String slotId,
+                   String date, String startTime, String endTime, String reason, String status, String cancelReason) {
         this.requestId = requestId;
         this.studentTp = studentTp;
         this.lecturerTp = lecturerTp;
         this.slotId = slotId;
+        this.date = date;
+        this.startTime = startTime;
+        this.endTime = endTime;
         this.reason = reason;
         this.status = status;
+        this.cancelReason = cancelReason != null ? cancelReason : "";
     }
 
     // Getters
@@ -34,12 +50,28 @@ public class Request {
         return slotId;
     }
 
+    public String getDate() {
+        return date;
+    }
+
+    public String getStartTime() {
+        return startTime;
+    }
+
+    public String getEndTime() {
+        return endTime;
+    }
+
     public String getReason() {
         return reason;
     }
 
     public String getStatus() {
         return status;
+    }
+    
+    public String getCancelReason() {
+        return cancelReason;
     }
 
     // Setters
@@ -59,6 +91,18 @@ public class Request {
         this.slotId = slotId;
     }
 
+    public void setDate(String date) {
+        this.date = date;
+    }
+
+    public void setStartTime(String startTime) {
+        this.startTime = startTime;
+    }
+
+    public void setEndTime(String endTime) {
+        this.endTime = endTime;
+    }
+
     public void setReason(String reason) {
         this.reason = reason;
     }
@@ -66,9 +110,15 @@ public class Request {
     public void setStatus(String status) {
         this.status = status;
     }
+    
+    public void setCancelReason(String cancelReason) {
+        this.cancelReason = cancelReason;
+    }
 
     @Override
     public String toString() {
-        return requestId + "|" + studentTp + "|" + lecturerTp + "|" + slotId + "|" + reason + "|" + status;
+        return requestId + "|" + studentTp + "|" + lecturerTp + "|" + slotId + "|" + 
+               date + "|" + startTime + "|" + endTime + "|" + reason + "|" + status + "|" + 
+               (cancelReason != null ? cancelReason : "");
     }
 }

@@ -65,7 +65,7 @@ public class UserFileManager {
                 }
             }
         } catch (FileNotFoundException e) {
-            System.err.println("User file not found: " + e.getMessage());
+            // File doesn't exist yet, return empty list
         }
         
         return users;
@@ -78,7 +78,7 @@ public class UserFileManager {
                 writer.println(user.toString());
             }
         } catch (IOException e) {
-            System.err.println("Error saving users: " + e.getMessage());
+            // Error saving, silent fail
         }
     }
 
@@ -88,7 +88,7 @@ public class UserFileManager {
              PrintWriter writer = new PrintWriter(fw)) {
             writer.println(user.toString());
         } catch (IOException e) {
-            System.err.println("Error appending user: " + e.getMessage());
+            // Error appending, silent fail
         }
     }
 
@@ -266,7 +266,7 @@ public class UserFileManager {
             }
             System.out.println("Backup created: " + backup.getAbsolutePath());
         } catch (IOException e) {
-            System.err.println("Error creating backup: " + e.getMessage());
+            // Backup failed, continue anyway
         }
     }
 }

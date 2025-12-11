@@ -32,14 +32,15 @@ public class AppointmentFileManager {
                     String date = parts[5];
                     String startTime = parts[6];
                     String status = parts[7];
+                    String cancelReason = parts.length >= 9 ? parts[8] : null;
                     
                     Appointment appointment = new Appointment(appointmentId, requestId, studentTp, 
-                                                             lecturerTp, slotId, date, startTime, status);
+                                                             lecturerTp, slotId, date, startTime, status, cancelReason);
                     appointments.add(appointment);
                 }
             }
         } catch (FileNotFoundException e) {
-            System.err.println("Appointment file not found: " + e.getMessage());
+            // File doesn't exist yet, return empty list
         }
         
         return appointments;
@@ -52,7 +53,7 @@ public class AppointmentFileManager {
                 writer.println(appointment.toString());
             }
         } catch (IOException e) {
-            System.err.println("Error saving appointments: " + e.getMessage());
+            // Error saving, silent fail
         }
     }
 
@@ -62,7 +63,7 @@ public class AppointmentFileManager {
              PrintWriter writer = new PrintWriter(fw)) {
             writer.println(appointment.toString());
         } catch (IOException e) {
-            System.err.println("Error appending appointment: " + e.getMessage());
+            // Error appending, silent fail
         }
     }
 

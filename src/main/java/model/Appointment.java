@@ -9,9 +9,17 @@ public class Appointment {
     private String date;
     private String startTime;
     private String status;
+    private String cancelReason;
 
+    // Constructor without cancelReason (for backward compatibility)
     public Appointment(String appointmentId, String requestId, String studentTp, String lecturerTp, 
                       String slotId, String date, String startTime, String status) {
+        this(appointmentId, requestId, studentTp, lecturerTp, slotId, date, startTime, status, null);
+    }
+
+    // Constructor with cancelReason
+    public Appointment(String appointmentId, String requestId, String studentTp, String lecturerTp, 
+                      String slotId, String date, String startTime, String status, String cancelReason) {
         this.appointmentId = appointmentId;
         this.requestId = requestId;
         this.studentTp = studentTp;
@@ -20,6 +28,7 @@ public class Appointment {
         this.date = date;
         this.startTime = startTime;
         this.status = status;
+        this.cancelReason = cancelReason;
     }
 
     // Getters
@@ -88,9 +97,18 @@ public class Appointment {
         this.status = status;
     }
 
+    public String getCancelReason() {
+        return cancelReason;
+    }
+
+    public void setCancelReason(String cancelReason) {
+        this.cancelReason = cancelReason;
+    }
+
     @Override
     public String toString() {
         return appointmentId + "|" + requestId + "|" + studentTp + "|" + lecturerTp + "|" + 
-               slotId + "|" + date + "|" + startTime + "|" + status;
+               slotId + "|" + date + "|" + startTime + "|" + status + "|" + 
+               (cancelReason != null ? cancelReason : "");
     }
 }

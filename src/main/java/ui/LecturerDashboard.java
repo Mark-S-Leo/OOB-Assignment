@@ -414,18 +414,15 @@ public class LecturerDashboard extends JFrame {
             if (confirm == JOptionPane.YES_OPTION) {
                 boolean success = SlotFileManager.delete(slotId);
                 if (success) {
-                    tableModel.removeRow(selectedRow);
                     JOptionPane.showMessageDialog(dialog,
                         "Slot deleted successfully!",
                         "Success",
                         JOptionPane.INFORMATION_MESSAGE);
                     
+                    tableModel.removeRow(selectedRow);
+                    
                     if (tableModel.getRowCount() == 0) {
                         dialog.dispose();
-                        JOptionPane.showMessageDialog(this,
-                            "All slots deleted.",
-                            "Info",
-                            JOptionPane.INFORMATION_MESSAGE);
                     }
                 } else {
                     showError("Failed to delete slot. Please try again.");

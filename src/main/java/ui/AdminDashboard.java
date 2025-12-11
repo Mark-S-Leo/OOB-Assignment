@@ -7,11 +7,9 @@ import java.awt.*;
 import java.util.ArrayList;
 
 public class AdminDashboard extends JFrame {
-    private User user;
     private AdminService adminService;
 
     public AdminDashboard(User user) {
-        this.user = user;
         this.adminService = new AdminService();
 
         setTitle("Admin Dashboard - " + user.getName());

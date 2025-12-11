@@ -1,7 +1,11 @@
 package service;
 
-import model.*;
-import file.*;
+import model.Request;
+import model.Slot;
+import model.Appointment;
+import file.RequestFileManager;
+import file.SlotFileManager;
+import file.AppointmentFileManager;
 import java.util.ArrayList;
 
 public class StudentService {
@@ -30,7 +34,6 @@ public class StudentService {
         // Check if slot exists and is open
         Slot slot = SlotFileManager.findById(slotId);
         if (slot == null || !"OPEN".equalsIgnoreCase(slot.getStatus())) {
-            System.out.println("Slot not available.");
             return false;
         }
 
@@ -38,11 +41,14 @@ public class StudentService {
         ArrayList<Request> allRequests = RequestFileManager.loadAll();
         String requestId = "R" + (allRequests.size() + 1);
 
-        // Create new request
-        Request newRequest = new Request(requestId, studentTp, lecturerTp, slotId, reason, "PENDING");
+        // Create new request with slot date and time information
+        Request newRequest = new Request(requestId, studentTp, lecturerTp, slotId, 
+                                        slot.getDate(), slot.getStartTime(), slot.getEndTime(),
+                                        reason, "PENDING");
         RequestFileManager.appendOne(newRequest);
 
-        System.out.println("Request created successfully: " + requestId);
+        // Set slot to ON_HOLD
+        SlotFileManager.updateStatus(slotId, "ON_HOLD");
         return true;
     }
 
@@ -55,7 +61,7 @@ public class StudentService {
     }
 
     /**
-     * Cancels a pending or approved consultation request
+     * Cancels a pending consultation request and creates cancelled appointment
      * @param requestId The ID of the request to cancel
      * @return true if cancelled successfully, false otherwise
      */
@@ -63,24 +69,47 @@ public class StudentService {
         Request request = RequestFileManager.findById(requestId);
         
         if (request == null) {
-            System.out.println("Request not found.");
             return false;
         }
 
         if (!request.getStudentTp().equals(studentTp)) {
-            System.out.println("You can only cancel your own requests.");
             return false;
         }
 
         String status = request.getStatus().toUpperCase();
-        if (!"PENDING".equals(status) && !"APPROVED".equals(status)) {
-            System.out.println("Can only cancel PENDING or APPROVED requests.");
+        if (!"PENDING".equals(status)) {
             return false;
         }
 
-        request.setStatus("CANCELLED");
-        RequestFileManager.update(request);
-        System.out.println("Request cancelled successfully.");
+        // Get slot details
+        Slot slot = SlotFileManager.findById(request.getSlotId());
+        if (slot == null) {
+            return false;
+        }
+
+        // Release the slot back to OPEN
+        SlotFileManager.updateStatus(request.getSlotId(), "OPEN");
+
+        // Create cancelled appointment
+        ArrayList<Appointment> allAppointments = AppointmentFileManager.loadAll();
+        String appointmentId = "A" + (allAppointments.size() + 1);
+        
+        Appointment cancelledAppointment = new Appointment(
+            appointmentId,
+            requestId,
+            studentTp,
+            request.getLecturerTp(),
+            request.getSlotId(),
+            slot.getDate(),
+            slot.getStartTime(),
+            "CANCELLED",
+            "Cancelled by student"
+        );
+        
+        AppointmentFileManager.appendOne(cancelledAppointment);
+
+        // Delete the request from requests.txt
+        RequestFileManager.delete(requestId);
         return true;
     }
 
