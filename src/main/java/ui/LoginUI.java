@@ -80,26 +80,36 @@ public class LoginUI extends JFrame {
         JOptionPane.showMessageDialog(this, "Login successful! Welcome " + user.getName(), 
                                      "Success", JOptionPane.INFORMATION_MESSAGE);
         
-        dispose(); // Close login window
-
-
-        switch (user.getRole().toUpperCase()) {
-            case "STUDENT":
-                new StudentDashboard(user).setVisible(true); // Student Module
-                break;
-            case "LECTURER":
-                new LecturerDashboard(user).setVisible(true); // Lecturer Module
-                break;
-            case "STAFF":
-                new StaffDashboard(user).setVisible(true); // Appointment Module
-                break;
-            case "ADMIN":
-                new AdminDashboard(user).setVisible(true); // Admin Module
-                break;
-            default:
-                JOptionPane.showMessageDialog(this, "Unknown role: " + user.getRole(), 
-                                             "Error", JOptionPane.ERROR_MESSAGE);
-        }
+        // Create dashboard on EDT to ensure proper Swing thread handling
+        SwingUtilities.invokeLater(() -> {
+            dispose(); // Close login window after switching to EDT
+            
+            try {
+                switch (user.getRole().toUpperCase()) {
+                    case "STUDENT":
+                        new StudentDashboard(user).setVisible(true); // Student Module
+                        break;
+                    case "LECTURER":
+                        new LecturerDashboard(user).setVisible(true); // Lecturer Module
+                        break;
+                    case "STAFF":
+                        new StaffDashboard(user).setVisible(true); // Appointment Module
+                        break;
+                    case "ADMIN":
+                        new AdminDashboard(user).setVisible(true); // Admin Module
+                        break;
+                    default:
+                        JOptionPane.showMessageDialog(null, "Unknown role: " + user.getRole(), 
+                                                     "Error", JOptionPane.ERROR_MESSAGE);
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+                JOptionPane.showMessageDialog(null, 
+                    "Error loading dashboard: " + e.getMessage() + "\nCheck console for details.", 
+                    "Error", JOptionPane.ERROR_MESSAGE);
+                System.exit(1);
+            }
+        });
     }
 
     public static void main(String[] args) {
