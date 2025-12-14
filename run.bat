@@ -50,6 +50,26 @@ echo.
 echo Running application...
 echo.
 
-%MAVEN_CMD% clean compile -q && %MAVEN_CMD% dependency:build-classpath -Dmdep.outputFile=target/classpath.txt -q && set /p CP=<target\classpath.txt && java -cp target\classes;%CP% Main
+REM Clean and compile
+call %MAVEN_CMD% clean compile -q
+if %ERRORLEVEL% NEQ 0 (
+    echo Compilation failed
+    pause
+    exit /b 1
+)
+
+REM Build classpath file
+call %MAVEN_CMD% dependency:build-classpath "-Dmdep.outputFile=target/classpath.txt" -q
+if %ERRORLEVEL% NEQ 0 (
+    echo Failed to build classpath
+    pause
+    exit /b 1
+)
+
+REM Read classpath from file
+set /p CP=<target\classpath.txt
+
+REM Run application with full classpath
+java -cp "target\classes;%CP%" Main
 
 pause
