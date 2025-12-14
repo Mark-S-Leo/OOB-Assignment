@@ -1,111 +1,55 @@
 @echo off
-SETLOCAL ENABLEDELAYEDEXPANSION
+cd /d "%~dp0"
 
 echo =====================================
 echo Student Consultation Management System
 echo =====================================
+echo.
 
-REM -------------------------
-REM Check if Maven exists
-REM -------------------------
+REM Define Maven paths to check
+set MAVEN_PATH_1=C:\tools\apache-maven-3.9.6\bin\mvn.cmd
+set MAVEN_PATH_2=C:\Program Files\Apache\maven\bin\mvn.cmd
+set MAVEN_CMD=
+
+REM Check if Maven is in system PATH
 where mvn >nul 2>nul
-IF %ERRORLEVEL% NEQ 0 (
-    echo Maven is not installed. Attempting auto-install...
-    echo.
+if %ERRORLEVEL% EQU 0 (
+    set MAVEN_CMD=mvn
+    goto run_app
+)
 
-    REM Try Chocolatey first (most common on Windows)
-    where choco >nul 2>nul
-    IF %ERRORLEVEL% EQU 0 (
-        echo Installing Maven using Chocolatey...
-        choco install maven -y
-        IF %ERRORLEVEL% EQU 0 (
-            echo Maven installed successfully via Chocolatey.
-            goto :verify_maven
-        )
-    )
+REM Check predefined locations
+if exist "%MAVEN_PATH_1%" (
+    set MAVEN_CMD=%MAVEN_PATH_1%
+    goto run_app
+)
 
-    REM Try Winget as fallback (Windows 10/11)
-    where winget >nul 2>nul
-    IF %ERRORLEVEL% EQU 0 (
-        echo Installing Maven using Winget...
-        winget install --id Apache.Maven -e --source winget --accept-package-agreements --accept-source-agreements
-        IF %ERRORLEVEL% EQU 0 (
-            echo Maven installed successfully via Winget.
-            goto :verify_maven
-        )
-    )
+if exist "%MAVEN_PATH_2%" (
+    set MAVEN_CMD=%MAVEN_PATH_2%
+    goto run_app
+)
 
-    REM If both failed
-    echo.
-    echo ==========================================
-    echo  Maven Installation Failed
-    echo ==========================================
-    echo Please install Maven manually:
-    echo.
-    echo Option 1 - Chocolatey (Recommended):
-    echo   1. Install Chocolatey from https://chocolatey.org/install
-    echo   2. Run: choco install maven
-    echo.
-    echo Option 2 - Manual:
-    echo   1. Download from https://maven.apache.org/download.cgi
-    echo   2. Extract and add bin folder to PATH
-    echo.
-    echo Option 3 - Winget (Windows 10/11):
-    echo   1. Update Windows to latest version
-    echo   2. Run: winget install Apache.Maven
-    echo.
+REM Maven not found - auto-install
+echo Maven not found. Installing Maven...
+if not exist C:\tools mkdir C:\tools
+
+echo Downloading Maven 3.9.6...
+powershell -Command "$ProgressPreference='SilentlyContinue'; Invoke-WebRequest -Uri 'https://archive.apache.org/dist/maven/maven-3/3.9.6/binaries/apache-maven-3.9.6-bin.zip' -OutFile '$env:TEMP\maven.zip'; Expand-Archive -Path '$env:TEMP\maven.zip' -DestinationPath 'C:\tools' -Force; Remove-Item '$env:TEMP\maven.zip' -Force"
+
+if %ERRORLEVEL% NEQ 0 (
+    echo Failed to install Maven
     pause
     exit /b 1
 )
 
-:verify_maven
-REM Refresh environment for newly installed Maven
-call refreshenv >nul 2>nul
-
-REM -------------------------
-REM Verify Maven is accessible
-REM -------------------------
-where mvn >nul 2>nul
-IF %ERRORLEVEL% NEQ 0 (
-    echo.
-    echo Maven was installed but not yet available in PATH.
-    echo Please close this window and run the script again.
-    pause
-    exit /b 1
-) ELSE (
-    echo Maven is already installed.
-)
-
-REM -------------------------
-REM Compile Project
-REM -------------------------
+set MAVEN_CMD=%MAVEN_PATH_1%
+echo Maven installed successfully.
 echo.
-echo Downloading dependencies and compiling...
-mvn clean compile
 
-IF %ERRORLEVEL% NEQ 0 (
-    echo.
-    echo Compilation failed!
-    pause
-    exit /b 1
-)
-
-REM -------------------------
-REM Build Classpath
-REM -------------------------
-echo.
-echo Building classpath...
-mvn dependency:build-classpath -q -Dmdep.outputFile=classpath.tmp
-
-SET /P CP=<classpath.tmp
-del classpath.tmp
-
-REM -------------------------
-REM Run Application
-REM -------------------------
-echo.
+:run_app
 echo Running application...
-java -cp "target\classes;%CP%" Main
+echo.
+
+%MAVEN_CMD% clean compile -q && %MAVEN_CMD% dependency:build-classpath -Dmdep.outputFile=target/classpath.txt -q && set /p CP=<target\classpath.txt && java -cp target\classes;%CP% Main
 
 pause
-ENDLOCAL
