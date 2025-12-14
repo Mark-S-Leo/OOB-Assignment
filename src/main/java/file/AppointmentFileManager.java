@@ -6,7 +6,7 @@ import java.util.ArrayList;
 import java.util.Scanner;
 
 public class AppointmentFileManager {
-    private static final String FILE_PATH = "src/main/resources/appointments.txt";
+    private static final String FILE_PATH = "src" + File.separator + "main" + File.separator + "resources" + File.separator + "appointments.txt";
 
     // Load all appointments from file
     public static ArrayList<Appointment> loadAll() {

@@ -8,7 +8,7 @@ import java.util.Scanner;
 
 
 public class UserFileManager {
-    private static final String FILE_PATH = "src/main/resources/users.txt";
+    private static final String FILE_PATH = "src" + File.separator + "main" + File.separator + "resources" + File.separator + "users.txt";
 
     // Load all users from file
     public static ArrayList<User> loadAll() {
